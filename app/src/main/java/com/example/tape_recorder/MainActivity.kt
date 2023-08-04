@@ -19,28 +19,29 @@ import java.io.IOException
 
 class MainActivity : AppCompatActivity(), OnTimerTickListener {
     companion object {
-        private const val REQUEST_RECODE_AUDIO_CODE = 200
+        private const val REQUEST_RECORD_AUDIO_CODE = 200
     }
 
-    // 릴리즈 -> 녹음 중 -> 릴리즈
+    // 릴리즈 -> 녹음중 -> 릴리즈
     // 릴리즈 -> 재생 -> 릴리즈
-    enum class State {
+    private enum class State {
         RELEASE, RECORDING, PLAYING
     }
 
-    private lateinit var timer : Timer
+    private lateinit var timer: Timer
 
     private lateinit var binding: ActivityMainBinding
     private var recorder: MediaRecorder? = null
-    private var player : MediaPlayer? = null
+    private var player: MediaPlayer? = null
     private var fileName: String = ""
     private var state: State = State.RELEASE
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        fileName = "${externalCacheDir?.absolutePath}/audiorecordtext.3gp"
+        fileName = "${externalCacheDir?.absolutePath}/audiorecordtest.3gp"
         timer = Timer(this)
 
         binding.recordButton.setOnClickListener {
@@ -48,11 +49,9 @@ class MainActivity : AppCompatActivity(), OnTimerTickListener {
                 State.RELEASE -> {
                     record()
                 }
-
                 State.RECORDING -> {
                     onRecord(false)
                 }
-
                 State.PLAYING -> {
 
                 }
@@ -63,10 +62,10 @@ class MainActivity : AppCompatActivity(), OnTimerTickListener {
             when (state) {
                 State.RELEASE -> {
                     onPlay(true)
-                }
-                else -> {
-                    // do nothing
-                }
+                } else -> {
+                // do nothing
+            }
+
             }
         }
 
@@ -80,6 +79,7 @@ class MainActivity : AppCompatActivity(), OnTimerTickListener {
                 }
             }
         }
+
     }
 
     private fun record() {
@@ -97,43 +97,37 @@ class MainActivity : AppCompatActivity(), OnTimerTickListener {
             ) -> {
                 showPermissionRationalDialog()
             }
-
             else -> {
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(Manifest.permission.RECORD_AUDIO),
-                    REQUEST_RECODE_AUDIO_CODE
+                    REQUEST_RECORD_AUDIO_CODE
                 )
             }
         }
     }
 
-    private fun onRecord(start: Boolean) = if (start) {
-        startRecording()
-    } else {
-        stopRecording()
-    }
+    private fun onRecord(start: Boolean) = if (start) startRecording() else stopRecoding()
 
-    private fun onPlay(start : Boolean) = if(start) startPlaying() else stopPlaying()
+    private fun onPlay(start: Boolean) = if(start) startPlaying() else stopPlaying()
 
     private fun startRecording() {
         state = State.RECORDING
 
-        recorder = MediaRecorder()
-            .apply {
-                setAudioSource(MediaRecorder.AudioSource.MIC)
-                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-                setOutputFile(fileName)
-                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+        recorder = MediaRecorder().apply {
+            setAudioSource(MediaRecorder.AudioSource.MIC)
+            setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+            setOutputFile(fileName)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
 
-                try {
-                    prepare()
-                } catch (e: IOException) {
-                    Log.e("APP", "prepare() failed $e")
-                }
-
-                start()
+            try {
+                prepare()
+            } catch (e: IOException) {
+                Log.e("APP", "prepare() failed $e")
             }
+
+            start()
+        }
 
         binding.waveformView.clearData()
         timer.start()
@@ -150,7 +144,7 @@ class MainActivity : AppCompatActivity(), OnTimerTickListener {
         binding.playButton.alpha = 0.3f
     }
 
-    private fun stopRecording() {
+    private fun stopRecoding() {
         recorder?.apply {
             stop()
             release()
@@ -158,6 +152,8 @@ class MainActivity : AppCompatActivity(), OnTimerTickListener {
         recorder = null
 
         timer.stop()
+
+        state = State.RELEASE
 
         binding.recordButton.setImageDrawable(
             ContextCompat.getDrawable(
@@ -175,17 +171,17 @@ class MainActivity : AppCompatActivity(), OnTimerTickListener {
         state = State.PLAYING
 
         player = MediaPlayer().apply {
-            try{
+            try {
                 setDataSource(fileName)
                 prepare()
-            }catch (e : IOException) {
-                Log.e("APP" , "media player prepare fail $e")
+            } catch (e: IOException) {
+                Log.e("APP", "media player prepare fail $e")
             }
 
             start()
         }
 
-        binding.waveformView.cleatWave()
+        binding.waveformView.clearWave()
         timer.start()
 
         player?.setOnCompletionListener {
@@ -206,28 +202,30 @@ class MainActivity : AppCompatActivity(), OnTimerTickListener {
 
         binding.recordButton.isEnabled = true
         binding.recordButton.alpha = 1.0f
-    }
 
+    }
     private fun showPermissionRationalDialog() {
         AlertDialog.Builder(this)
-            .setMessage("녹음 권한을 켜주셔아지 앱을 정상적으로 사용할 수 있습니다.")
+            .setMessage("녹음 권한을 켜주셔야지 앱을 정상적으로 사용할 수 있습니다.")
             .setPositiveButton("권한 허용하기") { _, _ ->
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(Manifest.permission.RECORD_AUDIO),
-                    REQUEST_RECODE_AUDIO_CODE
+                    REQUEST_RECORD_AUDIO_CODE
                 )
             }.setNegativeButton("취소") { dialogInterface, _ -> dialogInterface.cancel() }
             .show()
+
     }
 
     private fun showPermissionSettingDialog() {
         AlertDialog.Builder(this)
-            .setMessage("녹음 권한을 켜주셔야지 앱을 정상적으로 사용할 수 있습니다. 앱 설정 화면으로 진입하셔서 권한을 켜주세요")
+            .setMessage("녹음 권한을 켜주셔야지 앱을 정상적으로 사용할 수 있습니다. 앱 설정 화면으로 진입하셔서 권한을 켜주세요.")
             .setPositiveButton("권한 변경하러 가기") { _, _ ->
                 navigateToAppSetting()
             }.setNegativeButton("취소") { dialogInterface, _ -> dialogInterface.cancel() }
             .show()
+
     }
 
     private fun navigateToAppSetting() {
@@ -243,7 +241,8 @@ class MainActivity : AppCompatActivity(), OnTimerTickListener {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        val audioRecordPermissionGranted = requestCode == REQUEST_RECODE_AUDIO_CODE
+
+        val audioRecordPermissionGranted = requestCode == REQUEST_RECORD_AUDIO_CODE
                 && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
 
         if (audioRecordPermissionGranted) {
@@ -264,13 +263,13 @@ class MainActivity : AppCompatActivity(), OnTimerTickListener {
     override fun onTick(duration: Long) {
         val millisecond = duration % 1000
         val second = (duration / 1000) % 60
-        val minute = (duration / 1000 / 60) % 60
+        val minute = (duration / 1000 / 60)
 
-        binding.timerTextView.text = String.format("%02d:%02d.%02d" , minute , second , millisecond / 10)
+        binding.timerTextView.text = String.format("%02d:%02d.%02d", minute, second, millisecond / 10)
 
-        if(state == State.PLAYING ){
-            binding.waveformView.replayAmplitude(duration.toInt())
-        }else if(state == State.RECORDING) {
+        if(state == State.PLAYING) {
+            binding.waveformView.replayAmplitude()
+        } else if (state == State.RECORDING) {
             binding.waveformView.addAmplitude(recorder?.maxAmplitude?.toFloat() ?: 0f)
         }
 
